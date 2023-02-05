@@ -1,4 +1,5 @@
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
+import { filter } from 'rxjs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -11,39 +12,51 @@ export class AppModule implements OnModuleInit {
   async onModuleInit() {
     const minorityLimit = 0.05;
     const majorityLimit = 0.55;
-    const parties = ['a', 'b', 'c', 'd'];
+    const parties = [
+      {
+        index: 0,
+        name: 'a',
+        votes: 0,
+        removeOverVotes: 0,
+        removeUnderVotes: 0,
+        removeUnderVotesPrice: 0,
+        removeOverVotesPrice: 0,
+        votesPrice: 0,
+      },
+      {
+        index: 1,
+        name: 'b',
+        votes: 0,
+        removeOverVotes: 0,
+        removeUnderVotes: 0,
+        removeUnderVotesPrice: 0,
+        removeOverVotesPrice: 0,
+        votesPrice: 0,
+      },
+      {
+        index: 2,
+        name: 'c',
+        votes: 0,
+        removeOverVotes: 0,
+        removeUnderVotes: 0,
+        removeUnderVotesPrice: 0,
+        removeOverVotesPrice: 0,
+        votesPrice: 0,
+      },
+      {
+        index: 3,
+        name: 'd',
+        votes: 0,
+        removeOverVotes: 0,
+        removeUnderVotes: 0,
+        removeUnderVotesPrice: 0,
+        removeOverVotesPrice: 0,
+        votesPrice: 0,
+      },
+    ];
     const partiesPro = [
-      'a',
-      'b',
-      'c',
-      'd',
-      'b',
-      'b',
-      'c',
-      'd',
-      'b',
-      'b',
-      'd',
-      'd',
-      'b',
-      'b',
-      'c',
-      'd',
-      'b',
-      'b',
-      'd',
-      'd',
-      'b',
-      'b',
-      'c',
-      'd',
-      'b',
-      'b',
-      'b',
-      'b',
-      'b',
-      'b',
-      'b',
+      0, 1, 2, 3, 1, 1, 2, 3, 1, 1, 3, 3, 1, 1, 2, 3, 1, 1, 3, 3, 1, 1, 2, 3, 1,
+      1, 1, 1, 1, 1, 1,
     ];
     const electorateCount = 1000;
     Logger.log('** Voting Started **');
@@ -55,61 +68,49 @@ export class AppModule implements OnModuleInit {
         .map(({ value }) => value);
       votes.push(Array.from(new Set(vote)));
     }
-    const votesCount = parties.reduce(
-      (a, v) => ({
-        ...a,
-        [v]: {
-          orderVotes: 0,
-          votes: 0,
-          removeOverVotes: 0,
-          removeUnderVotes: 0,
-        },
-      }),
-      {},
-    );
     for (const vote of votes) {
       const firstVote = vote[0];
-      votesCount[firstVote].votes++;
+      parties[firstVote].votes++;
     }
 
     const OverLimitParties = [];
-    for (const key in votesCount) {
-      const votesPrice = votesCount[key].votes / electorateCount;
-      votesCount[key].votesPrice = votesPrice;
+    for (const key in parties) {
+      const votesPrice = parties[key].votes / electorateCount;
+      parties[key].votesPrice = votesPrice;
       if (votesPrice > majorityLimit) {
-        OverLimitParties.push(key);
+        OverLimitParties.push(parseInt(key));
       }
     }
     let overVotes = 0;
 
     if (OverLimitParties.length > 0) {
       overVotes =
-        votesCount[OverLimitParties[0]].votes - majorityLimit * electorateCount;
+        parties[OverLimitParties[0]].votes - majorityLimit * electorateCount;
     }
 
     for (const vote of votes) {
       const removeOverVote = vote.find((v) => !OverLimitParties.includes(v));
-      votesCount[removeOverVote].removeOverVotes++;
+      parties[removeOverVote].removeOverVotes++;
     }
 
     const underLimitParties = [];
-    for (const key in votesCount) {
+    for (const key in parties) {
       if (OverLimitParties.includes(key)) {
-        votesCount[key].removeOverVotes = majorityLimit * electorateCount;
+        parties[key].removeOverVotes = majorityLimit * electorateCount;
       } else {
-        const votesPrice = votesCount[key].removeOverVotes / overVotes;
-        votesCount[key].removeOverVotes = votesCount[key].votes + votesPrice;
+        const votesPrice = parties[key].removeOverVotes / overVotes;
+        parties[key].removeOverVotes = parties[key].votes + votesPrice;
       }
       const removeOverVotesPrice =
-        votesCount[key].removeOverVotes / electorateCount;
-      votesCount[key].removeOverVotesPrice = removeOverVotesPrice;
+        parties[key].removeOverVotes / electorateCount;
+      parties[key].removeOverVotesPrice = removeOverVotesPrice;
       if (removeOverVotesPrice < minorityLimit) {
-        underLimitParties.push(key);
+        underLimitParties.push(parseInt(key));
       }
     }
 
     const UnderLimitVotes = underLimitParties.reduce(
-      (a, v) => a + votesCount[v].removeOverVotes,
+      (a, v) => a + parties[v].removeOverVotes,
       0,
     );
 
@@ -117,24 +118,24 @@ export class AppModule implements OnModuleInit {
       const removeUnderVote = vote.find(
         (v) => ![...OverLimitParties, ...underLimitParties].includes(v),
       );
-      votesCount[removeUnderVote].removeUnderVotes++;
+      parties[removeUnderVote].removeUnderVotes++;
     }
 
-    for (const key in votesCount) {
+    for (const key in parties) {
       if (OverLimitParties.includes(key)) {
-        votesCount[key].removeUnderVotes = majorityLimit * electorateCount;
+        parties[key].removeUnderVotes = majorityLimit * electorateCount;
       } else if (underLimitParties.includes(key)) {
-        votesCount[key].removeUnderVotes = 0;
+        parties[key].removeUnderVotes = 0;
       } else {
-        const votesPrice = votesCount[key].removeUnderVotes / UnderLimitVotes;
-        votesCount[key].removeUnderVotes =
-          votesCount[key].removeOverVotes + votesPrice;
+        const votesPrice = parties[key].removeUnderVotes / UnderLimitVotes;
+        parties[key].removeUnderVotes =
+          parties[key].removeOverVotes + votesPrice;
       }
-      votesCount[key].removeUnderVotesPrice =
-        votesCount[key].removeUnderVotes / electorateCount;
+      parties[key].removeUnderVotesPrice =
+        parties[key].removeUnderVotes / electorateCount;
     }
 
-    Logger.log(votesCount);
+    Logger.log(parties);
 
     const remainedPartiesByOrder = [];
 
@@ -144,17 +145,17 @@ export class AppModule implements OnModuleInit {
       const orderedParties = parties
         .filter((party) => {
           return ![...underLimitParties, ...remainedPartiesByOrder].includes(
-            party,
+            party.index,
           );
         })
+        .map((a) => a.index)
         .sort(
-          (a, b) =>
-            votesCount[a].removeUnderVotes - votesCount[b].removeUnderVotes,
+          (a, b) => parties[a].removeUnderVotes - parties[b].removeUnderVotes,
         );
       remainedPartiesByOrder.unshift(orderedParties[0]);
     }
 
-    Logger.log(remainedPartiesByOrder);
+    Logger.log(remainedPartiesByOrder.map((item) => parties[item].name));
 
     Logger.log('** Voting Finished **');
   }
