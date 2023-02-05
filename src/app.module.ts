@@ -36,9 +36,6 @@ export class AppModule implements OnModuleInit {
       'b',
       'b',
       'c',
-      'a',
-      'a',
-      'a',
       'd',
       'b',
       'b',
@@ -95,7 +92,7 @@ export class AppModule implements OnModuleInit {
       votesCount[removeOverVote].removeOverVotes++;
     }
 
-    const UnderLimitParties = [];
+    const underLimitParties = [];
     for (const key in votesCount) {
       if (OverLimitParties.includes(key)) {
         votesCount[key].removeOverVotes = majorityLimit * electorateCount;
@@ -107,18 +104,18 @@ export class AppModule implements OnModuleInit {
         votesCount[key].removeOverVotes / electorateCount;
       votesCount[key].removeOverVotesPrice = removeOverVotesPrice;
       if (removeOverVotesPrice < minorityLimit) {
-        UnderLimitParties.push(key);
+        underLimitParties.push(key);
       }
     }
 
-    const UnderLimitVotes = UnderLimitParties.reduce(
+    const UnderLimitVotes = underLimitParties.reduce(
       (a, v) => a + votesCount[v].removeOverVotes,
       0,
     );
 
     for (const vote of votes) {
       const removeUnderVote = vote.find(
-        (v) => ![...OverLimitParties, ...UnderLimitParties].includes(v),
+        (v) => ![...OverLimitParties, ...underLimitParties].includes(v),
       );
       votesCount[removeUnderVote].removeUnderVotes++;
     }
@@ -126,7 +123,7 @@ export class AppModule implements OnModuleInit {
     for (const key in votesCount) {
       if (OverLimitParties.includes(key)) {
         votesCount[key].removeUnderVotes = majorityLimit * electorateCount;
-      } else if (UnderLimitParties.includes(key)) {
+      } else if (underLimitParties.includes(key)) {
         votesCount[key].removeUnderVotes = 0;
       } else {
         const votesPrice = votesCount[key].removeUnderVotes / UnderLimitVotes;
@@ -137,20 +134,28 @@ export class AppModule implements OnModuleInit {
         votesCount[key].removeUnderVotes / electorateCount;
     }
 
-    const remainedPartiesByOrder = [];
-    for (
-      let index = 0;
-      index < parties.length - UnderLimitParties.length;
-      index++
-    ) {
-      for (const vote of votes) {
-        const removeUnderVote = vote.find(
-          (v) => ![...UnderLimitParties, ...remainedPartiesByOrder].includes(v),
-        );
-        votesCount[removeUnderVote].orderVotes++;
-      }
-    }
     Logger.log(votesCount);
+
+    const remainedPartiesByOrder = [];
+
+    while (
+      [...underLimitParties, ...remainedPartiesByOrder].length < parties.length
+    ) {
+      const orderedParties = parties
+        .filter((party) => {
+          return ![...underLimitParties, ...remainedPartiesByOrder].includes(
+            party,
+          );
+        })
+        .sort(
+          (a, b) =>
+            votesCount[a].removeUnderVotes - votesCount[b].removeUnderVotes,
+        );
+      remainedPartiesByOrder.unshift(orderedParties[0]);
+    }
+
+    Logger.log(remainedPartiesByOrder);
+
     Logger.log('** Voting Finished **');
   }
 }
