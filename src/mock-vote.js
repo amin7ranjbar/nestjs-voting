@@ -26,12 +26,36 @@ function generatePermutations(list, size = list.length) {
 
 const rankedVotes = generatePermutations(parties.map((item) => item.index)).map(
   (item) => {
-    const random = Math.floor(Math.random() * 100);
+    const random = Math.floor(Math.random() * 1000);
     return { vote: item, count: random };
   },
 );
 
-const ELECTORATE_COUNT = rankedVotes.reduce((a, v) => a + v.count, 0);
+const electorates = rankedVotes.reduce((a, v) => a + v.count, 0);
 
-console.log(ELECTORATE_COUNT);
-console.log(rankedVotes);
+rankedVotes.map((item) => {
+  parties[item.vote[0]].votes += item.count;
+});
+
+const overMajorityVotes = MAJORITY_LIMIT * electorates;
+const underMinorityVotes = MINORITY_LIMIT * electorates;
+
+const overMajorityParty = parties.filter(
+  (item) => item.votes > overMajorityVotes,
+);
+
+const underMinorityParty = parties.filter(
+  (item) => item.votes < underMinorityVotes,
+);
+
+console.log(underMinorityParty);
+console.log(overMajorityParty);
+
+if (overMajorityParty.length > 0) {
+  console.log(overMajorityParty);
+} else {
+  console.log(overMajorityVotes, underMinorityVotes);
+  console.log(electorates);
+  console.log(rankedVotes);
+  console.log(parties);
+}
