@@ -1,6 +1,6 @@
 const MINORITY_LIMIT = 0.05;
 const MAJORITY_LIMIT = 0.75;
-const PARTY_COUNT = 4;
+const PARTY_COUNT = 3;
 const SEATS_COUNT = 100;
 
 const parties = [];
@@ -24,7 +24,7 @@ function generatePermutations(list, size = list.length) {
   );
 }
 
-const rankedVotes = generatePermutations(parties.map((item) => item.name)).map(
+const rankedVotes = generatePermutations(parties.map((item) => item.index)).map(
   (item) => {
     const random = Math.floor(Math.random() * 100);
     return { vote: item, count: random };
