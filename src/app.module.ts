@@ -122,7 +122,7 @@ export class AppModule implements OnModuleInit {
     const remainedPartiesByOrder = [];
     Logger.log('** Voting Finished **');
 
-    Logger.log('** Results : **');
+    Logger.log('** Results For Executive Branch: **');
     while (
       [...underLimitParties, ...remainedPartiesByOrder].length < parties.length
     ) {
@@ -152,21 +152,21 @@ export class AppModule implements OnModuleInit {
           .filter((party) => {
             return party.order > 0;
           })
-          .sort((a, b) => a.order - b.order);
+          .sort((a, b) => b.order - a.order);
         const firstParty = (
-          (twoRemainedParties[1].order / ELECTORATE_COUNT) *
+          (twoRemainedParties[0].order / ELECTORATE_COUNT) *
           100
         ).toFixed(2);
         const secondParty = (
-          (twoRemainedParties[0].order / ELECTORATE_COUNT) *
+          (twoRemainedParties[1].order / ELECTORATE_COUNT) *
           100
         ).toFixed(2);
 
         Logger.log(
-          `party ${twoRemainedParties[1].name} with ${firstParty} percent of votes wins Head Of Government position`,
+          `party ${twoRemainedParties[0].name} with ${firstParty} percent of votes wins Head Of Government position`,
         );
         Logger.log(
-          `party ${twoRemainedParties[0].name} with ${secondParty} percent of votes wins Head Of State position`,
+          `party ${twoRemainedParties[1].name} with ${secondParty} percent of votes wins Head Of State position`,
         );
       }
       remainedPartiesByOrder.unshift(orderedParties[0]);
@@ -175,10 +175,16 @@ export class AppModule implements OnModuleInit {
     const sumOfSeats = parties.reduce((a, v) => a + v.seats, 0);
 
     parties[remainedPartiesByOrder[0]].seats += SEATS_COUNT - sumOfSeats;
-    Logger.log('** Seats Count : **');
-    remainedPartiesByOrder.map((item) => {
-      Logger.log(`party ${parties[item].name} : ${parties[item].seats} seat`);
-    });
+    Logger.log('** Results For Legislative Branch: **');
+    parties
+      .sort((a, b) => b.seats - a.seats)
+      .map((item) => {
+        if (item.seats > 0) {
+          Logger.log(`party ${item.name} wins ${item.seats} seats`);
+        } else {
+          Logger.log(`party ${item.name} did not win any seats`);
+        }
+      });
     process.exit();
   }
 }
