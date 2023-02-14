@@ -11,7 +11,7 @@ export class AppModule implements OnModuleInit {
   async onModuleInit() {
     const MINORITY_LIMIT = 0.05;
     const MAJORITY_LIMIT = 0.75;
-    const PARTY_COUNT = 4;
+    const PARTY_COUNT = 7;
     const ELECTORATE_COUNT = 10000;
     const SEATS_COUNT = 100;
 
@@ -120,10 +120,15 @@ export class AppModule implements OnModuleInit {
     }
 
     const remainedPartiesByOrder = [];
+    Logger.log('** Voting Finished **');
 
+    Logger.log('** Results : **');
     while (
       [...underLimitParties, ...remainedPartiesByOrder].length < parties.length
     ) {
+      for (const party of parties) {
+        party.order = 0;
+      }
       for (const vote of votes) {
         const removeOverVote = vote.find(
           (v) => ![...underLimitParties, ...remainedPartiesByOrder].includes(v),
@@ -138,18 +143,42 @@ export class AppModule implements OnModuleInit {
         })
         .map((a) => a.index)
         .sort((a, b) => parties[a].order - parties[b].order);
+      if (
+        parties.length -
+          [...underLimitParties, ...remainedPartiesByOrder].length ==
+        2
+      ) {
+        const twoRemainedParties = parties
+          .filter((party) => {
+            return party.order > 0;
+          })
+          .sort((a, b) => a.order - b.order);
+        const firstParty = (
+          (twoRemainedParties[1].order / ELECTORATE_COUNT) *
+          100
+        ).toFixed(2);
+        const secondParty = (
+          (twoRemainedParties[0].order / ELECTORATE_COUNT) *
+          100
+        ).toFixed(2);
+
+        Logger.log(
+          `party ${twoRemainedParties[1].name} with ${firstParty} percent of votes wins Head Of Government position`,
+        );
+        Logger.log(
+          `party ${twoRemainedParties[0].name} with ${secondParty} percent of votes wins Head Of State position`,
+        );
+      }
       remainedPartiesByOrder.unshift(orderedParties[0]);
     }
 
     const sumOfSeats = parties.reduce((a, v) => a + v.seats, 0);
 
     parties[remainedPartiesByOrder[0]].seats += SEATS_COUNT - sumOfSeats;
-
-    Logger.log('** Voting Finished **');
-
-    Logger.log('** Results : **');
+    Logger.log('** Seats Count : **');
     remainedPartiesByOrder.map((item) => {
       Logger.log(`party ${parties[item].name} : ${parties[item].seats} seat`);
     });
+    process.exit();
   }
 }
